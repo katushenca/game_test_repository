@@ -6,15 +6,17 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField]private float speed; //[SerializeField] чтобы появился ползунок в unity
+    [SerializeField] private LayerMask groundLayer;
     private Rigidbody2D body; // чтобы управлять слаймом
     private Animator animator; // доступ к аниматору
-    private bool grounded;
+    private BoxCollider2D BoxCollider;
     
     private void Awake() // Вызывается каждый раз когда начинается игра
     {
         body = GetComponent<Rigidbody2D>(); // Получить доступ к слайму - проверить player на наличие rigidbody2d и будет хранить внутри body
         // условно говоря получение ссылки
         animator = GetComponent<Animator>();
+        BoxCollider = GetComponent<BoxCollider2D>();
     } 
 
     private void Update()
@@ -27,12 +29,12 @@ public class PlayerMovement : MonoBehaviour
             transform.localScale = Vector3.one; // чтоб лицом поворачивался в нужную сторону
         if (horizontalInput < -0.01f) // двигается вправо
             transform.localScale = new Vector3(-1, 1, 1); // чтоб лицом поворачивался в нужную сторону 
-        if (Input.GetKey(KeyCode.Space) && grounded) // прыгать можно только когда нажат пробел и челик на земле
+        if (Input.GetKey(KeyCode.Space) && isGrounded()) // прыгать можно только когда нажат пробел и челик на земле
             Jump();
         
         // Set Animations
         animator.SetBool("run", horizontalInput != 0);
-        animator.SetBool("grounded", grounded);
+        animator.SetBool("grounded", isGrounded());
     }
 
     private void Jump()
@@ -40,12 +42,16 @@ public class PlayerMovement : MonoBehaviour
         body.velocity = new Vector2(body.velocity.x, speed);
         // с тригером анимация правильная
         animator.SetTrigger("jump");
-        grounded = false;
     }
 
     private void OnCollisionEnter2D(Collision2D collision) // Встроенный метод
     {
-        if (collision.gameObject.tag == "ground")
-            grounded = true;
+    }
+
+    private bool isGrounded()
+    {
+        RaycastHit2D raycastHit =
+            Physics2D.BoxCast(BoxCollider.bounds.center, BoxCollider.bounds.size,  0, Vector2.down, 0.1f, groundLayer);
+        return raycastHit.collider != null;
     }
 }
